@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=none">
+    <title>SocialApp</title>
+    <style>
+      body {
+        user-select: none;
+      }
+    </style>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+   <meta name="theme-color" content="#1976D2">
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    
+    <script src="config.js"></script>
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app">
+        <!-- Loading screen will be here initially -->
+        <div id="loadingScreen" class="loading-screen active">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script src="app3.js"></script>
+  <!-- 
+    <script src="seed.js"></script>
+    <script src="launch.js"></script>
+    -->
+</body>
+</html>
