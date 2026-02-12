@@ -31,7 +31,7 @@ function initPromotion() {
   `;
 
   const img = document.createElement('img');
-  img.src = 'logo.png';
+  img.src = 'https://heartquotelabs-cell.github.io/Social_Text_Based/p_romo/hqp/20260212_171406.png';
   img.alt = 'logo';
   img.style.cssText = `
     width: 100%;
