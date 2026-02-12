@@ -15,7 +15,7 @@ function initPromotion() {
     padding: 15px;
     border: .5px solid #e0e0e0;
     border-radius: 15px;
-    margin: 10px;
+    margin: 18px;
     max-width: 600px;
     font-family: Arial, sans-serif;
   `;
