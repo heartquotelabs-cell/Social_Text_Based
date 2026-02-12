@@ -1,5 +1,10 @@
-document.addEventListener('DOMContentLoaded', function() {
+function initPromotion() {
   const promotion = document.getElementById('promotion');
+  if (!promotion) {
+    console.error('p_romo.js: Element #promotion not found in DOM');
+    return;
+  }
+  
   // Create main container
   const notesKeeper = document.createElement('div');
   notesKeeper.id = 'notes-keeper';
@@ -24,9 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 4px;
     overflow: hidden;
   `;
-  
+
   const img = document.createElement('img');
-  img.src = 'logo.png'; // Replace with your image URL
+  img.src = 'logo.png';
   img.alt = 'logo';
   img.style.cssText = `
     width: 100%;
@@ -63,59 +68,66 @@ document.addEventListener('DOMContentLoaded', function() {
   `;
   showcaseTitle.textContent = 'Your notes organizer';
 
-  // Right side red button
-// Right side red button - with style reset
-const button = document.createElement('button');
-button.textContent = 'Get App';
+  // Right side red button - with style reset
+  const button = document.createElement('button');
+  button.textContent = 'Get App';
 
-// Reset ALL inherited styles first
-button.style.cssText = `
-  all: initial !important;
-  display: inline-block !important;
-  background-color: #ff4444 !important;
-  color: white !important;
-  border: none !important;
-  border-radius: 4px !important;
-  padding: 8px 16px !important;
-  font-size: 14px !important;
-  font-family: Arial, sans-serif !important;
-  cursor: pointer !important;
-  font-weight: 500 !important;
-  transition: background-color 0.2s !important;
-  flex-shrink: 0 !important;
-  width: auto !important;
-  height: auto !important;
-  margin: 0 !important;
-  line-height: normal !important;
-  text-transform: none !important;
-  letter-spacing: normal !important;
-  box-shadow: none !important;
-  text-shadow: none !important;
-`;
+  // Reset ALL inherited styles first
+  button.style.cssText = `
+    all: initial !important;
+    display: inline-block !important;
+    background-color: #ff4444 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 8px 16px !important;
+    font-size: 14px !important;
+    font-family: Arial, sans-serif !important;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    transition: background-color 0.2s !important;
+    flex-shrink: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    line-height: normal !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  `;
 
-// Hover effect
-button.addEventListener('mouseenter', () => {
-  button.style.backgroundColor = '#cc0000 !important';
-});
+  // Hover effect
+  button.addEventListener('mouseenter', () => {
+    button.style.backgroundColor = '#cc0000 !important';
+  });
 
-button.addEventListener('mouseleave', () => {
-  button.style.backgroundColor = '#ff4444 !important';
-});
+  button.addEventListener('mouseleave', () => {
+    button.style.backgroundColor = '#ff4444 !important';
+  });
 
   // Click handler - open provided link
   button.addEventListener('click', function() {
-    const link = 'https://apkpure.com/heartquote/com.heartquote/downloading'; // Replace with your actual link
+    const link = 'https://apkpure.com/heartquote/com.heartquote/downloading';
     window.open(link, '_blank');
   });
 
   // Assemble structure
   contentContainer.appendChild(nameElement);
   contentContainer.appendChild(showcaseTitle);
-  
+
   notesKeeper.appendChild(imgContainer);
   notesKeeper.appendChild(contentContainer);
   notesKeeper.appendChild(button);
 
   // Add to page
   promotion.appendChild(notesKeeper);
-});
+  console.log('p_romo.js: Promotion widget injected successfully');
+}
+
+// Run immediately if DOM is ready, otherwise wait for DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPromotion);
+} else {
+  initPromotion();
+}
