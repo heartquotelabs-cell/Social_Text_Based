@@ -1,3 +1,5 @@
+
+  // Firebase configuration - Replace with your own config
 const firebaseConfig = {
     apiKey: "AIzaSyCZCAwncuoDuy033ZrEquCwRvYpacBs8xM",
     authDomain: "heartquotecommunity.firebaseapp.com",
@@ -7,6 +9,7 @@ const firebaseConfig = {
     appId: "1:346084161963:web:f7ed56dc4a4599f4befaee",
     measurementId: "G-JGKWQP35QB"
   };
+
 // Simple Firebase initialization without the problematic method
 let analytics = null;
 let firebaseInitialized = false;
@@ -107,7 +110,6 @@ function trackUserSession() {
 // Track page view with title - SIMPLIFIED VERSION
 function trackPageView() {
   if (!analytics || !firebaseInitialized) {
-    console.log('Analytics not ready, will retry in 2 seconds...');
     setTimeout(trackPageView, 2000);
     return;
   }
@@ -115,32 +117,32 @@ function trackPageView() {
   try {
     const pageTitle = document.title || 'Untitled Page';
     const pagePath = window.location.pathname;
-    const pageUrl = window.location.href;
-    
-    console.log('📊 TRACKING PAGE VIEW:');
-    console.log('  - Title:', pageTitle);
-    console.log('  - Path:', pagePath);
-    console.log('  - URL:', pageUrl);
-    
-    // Send page_view event - using standard event name
+
+    // 1. Force the 'config' to update (This is the secret sauce for GA4)
+    // This ensures any auto-collected events also use the correct title
+    window.gtag('config', firebaseConfig.measurementId, {
+      'page_title': pageTitle,
+      'page_path': pagePath,
+      'page_location': window.location.href
+    });
+
+    // 2. Set Screen Name for the Real-time 'Screen' report
+    analytics.setCurrentScreen(pageTitle);
+
+    // 3. Manually log the event
     analytics.logEvent('page_view', {
       page_title: pageTitle,
-      page_path: pagePath,
-      page_location: pageUrl
+      page_path: pagePath
     });
     
-    console.log('✅ Page view tracked successfully');
-    
-    // Also track as screen_view for better compatibility
-    analytics.logEvent('screen_view', {
-      screen_name: pageTitle,
-      screen_class: pagePath
-    });
+    console.log('✅ Real-time Title sent:', pageTitle);
     
   } catch (error) {
     console.error('Error tracking page view:', error);
   }
 }
+
+
 
 // Track unique users
 function trackUniqueUser() {
@@ -247,7 +249,7 @@ function createPromotionWidget(promotion) {
   `;
 
   const img = document.createElement('img');
-  img.src = 'https://heartquotelabs-cell.github.io/Social_Text_Based/p_romo/hqp/20260212_171406.png';
+  img.src = 'https://cdn.jsdelivr.net/gh/heartquotelabs-cell/Social_Text_Based/p_romo/hqp/20260212_171406.png';
   img.alt = 'logo';
   img.style.cssText = `
     width: 100%;
