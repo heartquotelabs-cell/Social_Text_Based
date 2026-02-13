@@ -1,3 +1,6 @@
+
+
+  // Firebase configuration - Replace with your own config
 const firebaseConfig = {
     apiKey: "AIzaSyCZCAwncuoDuy033ZrEquCwRvYpacBs8xM",
     authDomain: "heartquotecommunity.firebaseapp.com",
@@ -7,6 +10,7 @@ const firebaseConfig = {
     appId: "1:346084161963:web:f7ed56dc4a4599f4befaee",
     measurementId: "G-JGKWQP35QB"
   };
+
 // Simple Firebase initialization without the problematic method
 let analytics = null;
 let firebaseInitialized = false;
@@ -23,30 +27,30 @@ function loadFirebaseScripts() {
     }
 
     console.log('Loading Firebase scripts...');
-
+    
     // Load Firebase SDK - using older compatible version
     const script1 = document.createElement('script');
     script1.src = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js';
-
+    
     const script2 = document.createElement('script');
     script2.src = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js';
-
+    
     script1.onload = () => {
       console.log('Firebase App loaded');
       document.head.appendChild(script2);
     };
-
+    
     script2.onload = () => {
       console.log('Firebase Analytics loaded');
       initializeFirebase();
       resolve();
     };
-
+    
     script2.onerror = (error) => {
       console.error('Failed to load Firebase Analytics:', error);
       reject(error);
     };
-
+    
     document.head.appendChild(script1);
   });
 }
@@ -56,20 +60,20 @@ function initializeFirebase() {
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
-
+    
     // Get analytics instance
     analytics = firebase.analytics();
-
+    
     // Enable analytics collection
     analytics.setAnalyticsCollectionEnabled(true);
-
+    
     firebaseInitialized = true;
     console.log('Firebase Analytics initialized successfully');
-
+    
     // Now track the page view
     trackPageView();
     trackUserSession();
-
+    
   } catch (error) {
     console.error('Error initializing Firebase:', error);
   }
@@ -78,7 +82,7 @@ function initializeFirebase() {
 // Track user session
 function trackUserSession() {
   if (!analytics || !firebaseInitialized) return;
-
+  
   try {
     analytics.logEvent('session_start', {
       session_start: new Date().toISOString(),
@@ -86,9 +90,9 @@ function trackUserSession() {
       language: navigator.language || 'unknown',
       screen_resolution: `${window.screen.width}x${window.screen.height}`
     });
-
+    
     console.log('Session start tracked');
-
+    
     // Track session duration
     const sessionStart = Date.now();
     window.addEventListener('beforeunload', () => {
@@ -107,56 +111,55 @@ function trackUserSession() {
 // Track page view with title - SIMPLIFIED VERSION
 function trackPageView() {
   if (!analytics || !firebaseInitialized) {
-    console.log('Analytics not ready, will retry in 2 seconds...');
     setTimeout(trackPageView, 2000);
     return;
   }
-
+  
   try {
     const pageTitle = document.title || 'Untitled Page';
     const pagePath = window.location.pathname;
-    const pageUrl = window.location.href;
 
-    console.log('📊 TRACKING PAGE VIEW:');
-    console.log('  - Title:', pageTitle);
-    console.log('  - Path:', pagePath);
-    console.log('  - URL:', pageUrl);
+    // 1. Force the 'config' to update (This is the secret sauce for GA4)
+    // This ensures any auto-collected events also use the correct title
+    window.gtag('config', firebaseConfig.measurementId, {
+      'page_title': pageTitle,
+      'page_path': pagePath,
+      'page_location': window.location.href
+    });
 
-    // Send page_view event - using standard event name
+    // 2. Set Screen Name for the Real-time 'Screen' report
+    analytics.setCurrentScreen(pageTitle);
+
+    // 3. Manually log the event
     analytics.logEvent('page_view', {
       page_title: pageTitle,
-      page_path: pagePath,
-      page_location: pageUrl
+      page_path: pagePath
     });
-
-    console.log('✅ Page view tracked successfully');
-
-    // Also track as screen_view for better compatibility
-    analytics.logEvent('screen_view', {
-      screen_name: pageTitle,
-      screen_class: pagePath
-    });
-
+    
+    console.log('✅ Real-time Title sent:', pageTitle);
+    
   } catch (error) {
     console.error('Error tracking page view:', error);
   }
 }
 
+
+
 // Track unique users
 function trackUniqueUser() {
   if (!analytics || !firebaseInitialized) return;
-
+  
   try {
     // Simple user tracking
     const lastVisit = localStorage.getItem('last_visit_date');
     const today = new Date().toDateString();
-
+    
     if (lastVisit !== today) {
       analytics.logEvent('user_visit', {
         visit_date: today,
         page_title: document.title || 'Untitled'
       });
-
+      
       localStorage.setItem('last_visit_date', today);
       console.log('User visit tracked for today');
     }
@@ -171,7 +174,7 @@ function trackPromotionInteraction(action, details = {}) {
     console.log('Analytics not ready, promotion tracking delayed');
     return;
   }
-
+  
   try {
     analytics.logEvent('promotion_action', {
       action_name: action,
@@ -179,7 +182,7 @@ function trackPromotionInteraction(action, details = {}) {
       page_path: window.location.pathname,
       ...details
     });
-
+    
     console.log('Promotion interaction tracked:', action);
   } catch (error) {
     console.error('Error tracking promotion:', error);
@@ -189,7 +192,7 @@ function trackPromotionInteraction(action, details = {}) {
 // Modified initPromotion function
 function initPromotion() {
   console.log('🚀 Starting promotion widget...');
-
+  
   const promotion = document.getElementById('promotion');
   if (!promotion) {
     console.error('❌ Element #promotion not found');
@@ -198,19 +201,19 @@ function initPromotion() {
 
   // First, inject the widget (so users see it immediately)
   createPromotionWidget(promotion);
-
+  
   // Then try to load Firebase (don't block the widget)
   setTimeout(() => {
     loadFirebaseScripts()
       .then(() => {
         console.log('✅ Firebase ready, tracking additional data...');
-
+        
         // Track user after Firebase is ready
         setTimeout(() => {
           trackUniqueUser();
           trackPromotionInteraction('widget_loaded');
         }, 1000);
-
+        
       })
       .catch(error => {
         console.error('❌ Firebase failed to load:', error);
@@ -220,7 +223,7 @@ function initPromotion() {
 
 function createPromotionWidget(promotion) {
   console.log('Creating promotion widget...');
-
+  
   // Create main container
   const notesKeeper = document.createElement('div');
   notesKeeper.id = 'notes-keeper';
@@ -318,7 +321,7 @@ function createPromotionWidget(promotion) {
 
   button.addEventListener('click', function() {
     const link = 'https://apkpure.com/heartquote/com.heartquote/downloading';
-
+    
     // Track click if analytics is available
     if (analytics && firebaseInitialized) {
       trackPromotionInteraction('button_click', {
@@ -328,7 +331,7 @@ function createPromotionWidget(promotion) {
     } else {
       console.log('Button clicked (analytics not ready)');
     }
-
+    
     window.open(link, '_blank');
   });
 
