@@ -1,4 +1,3 @@
-// Firebase configuration - Replace with your own config
 const firebaseConfig = {
     apiKey: "AIzaSyCZCAwncuoDuy033ZrEquCwRvYpacBs8xM",
     authDomain: "heartquotecommunity.firebaseapp.com",
@@ -8,166 +7,219 @@ const firebaseConfig = {
     appId: "1:346084161963:web:f7ed56dc4a4599f4befaee",
     measurementId: "G-JGKWQP35QB"
   };
-// Initialize Firebase
+// Simple Firebase initialization without the problematic method
 let analytics = null;
+let firebaseInitialized = false;
 
 // Load Firebase scripts dynamically
 function loadFirebaseScripts() {
   return new Promise((resolve, reject) => {
     // Check if Firebase is already loaded
     if (window.firebase && window.firebase.analytics) {
+      console.log('Firebase already loaded');
+      initializeFirebase();
       resolve();
       return;
     }
 
-    // Load Firebase SDK
+    console.log('Loading Firebase scripts...');
+
+    // Load Firebase SDK - using older compatible version
     const script1 = document.createElement('script');
-    script1.src = 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js';
-    
+    script1.src = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js';
+
     const script2 = document.createElement('script');
-    script2.src = 'https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics-compat.js';
-    
+    script2.src = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js';
+
     script1.onload = () => {
+      console.log('Firebase App loaded');
       document.head.appendChild(script2);
     };
-    
+
     script2.onload = () => {
-      // Initialize Firebase
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
-      analytics = firebase.analytics();
-      
-      // Track user engagement
-      trackUserSession();
+      console.log('Firebase Analytics loaded');
+      initializeFirebase();
       resolve();
     };
-    
-    script2.onerror = reject;
+
+    script2.onerror = (error) => {
+      console.error('Failed to load Firebase Analytics:', error);
+      reject(error);
+    };
+
     document.head.appendChild(script1);
   });
 }
 
+function initializeFirebase() {
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    // Get analytics instance
+    analytics = firebase.analytics();
+
+    // Enable analytics collection
+    analytics.setAnalyticsCollectionEnabled(true);
+
+    firebaseInitialized = true;
+    console.log('Firebase Analytics initialized successfully');
+
+    // Now track the page view
+    trackPageView();
+    trackUserSession();
+
+  } catch (error) {
+    console.error('Error initializing Firebase:', error);
+  }
+}
+
 // Track user session
 function trackUserSession() {
-  if (!analytics) return;
-  
-  // Track session start
-  analytics.logEvent('session_start', {
-    timestamp: new Date().toISOString(),
-    user_agent: navigator.userAgent,
-    language: navigator.language,
-    screen_resolution: `${window.screen.width}x${window.screen.height}`
-  });
-  
-  // Track session duration
-  const sessionStart = Date.now();
-  window.addEventListener('beforeunload', () => {
-    const sessionDuration = Math.round((Date.now() - sessionStart) / 1000); // in seconds
-    analytics.logEvent('session_end', {
-      duration_seconds: sessionDuration
+  if (!analytics || !firebaseInitialized) return;
+
+  try {
+    analytics.logEvent('session_start', {
+      session_start: new Date().toISOString(),
+      user_agent: navigator.userAgent.substring(0, 100),
+      language: navigator.language || 'unknown',
+      screen_resolution: `${window.screen.width}x${window.screen.height}`
     });
-  });
+
+    console.log('Session start tracked');
+
+    // Track session duration
+    const sessionStart = Date.now();
+    window.addEventListener('beforeunload', () => {
+      const sessionDuration = Math.round((Date.now() - sessionStart) / 1000);
+      if (analytics && firebaseInitialized) {
+        analytics.logEvent('session_end', {
+          duration_seconds: sessionDuration
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error tracking session:', error);
+  }
 }
 
-// Track page view with title
+// Track page view with title - SIMPLIFIED VERSION
 function trackPageView() {
-  if (!analytics) return;
-  
-  const pageTitle = document.title || 'Untitled Page';
-  const pagePath = window.location.pathname;
-  const pageUrl = window.location.href;
-  
-  analytics.logEvent('page_view', {
-    page_title: pageTitle,
-    page_path: pagePath,
-    page_url: pageUrl,
-    timestamp: new Date().toISOString()
-  });
-  
-  console.log('Analytics: Page view tracked -', pageTitle);
+  if (!analytics || !firebaseInitialized) {
+    console.log('Analytics not ready, will retry in 2 seconds...');
+    setTimeout(trackPageView, 2000);
+    return;
+  }
+
+  try {
+    const pageTitle = document.title || 'Untitled Page';
+    const pagePath = window.location.pathname;
+    const pageUrl = window.location.href;
+
+    console.log('📊 TRACKING PAGE VIEW:');
+    console.log('  - Title:', pageTitle);
+    console.log('  - Path:', pagePath);
+    console.log('  - URL:', pageUrl);
+
+    // Send page_view event - using standard event name
+    analytics.logEvent('page_view', {
+      page_title: pageTitle,
+      page_path: pagePath,
+      page_location: pageUrl
+    });
+
+    console.log('✅ Page view tracked successfully');
+
+    // Also track as screen_view for better compatibility
+    analytics.logEvent('screen_view', {
+      screen_name: pageTitle,
+      screen_class: pagePath
+    });
+
+  } catch (error) {
+    console.error('Error tracking page view:', error);
+  }
 }
 
-// Track time spent on page
-function trackTimeOnPage() {
-  if (!analytics) return;
-  
-  const pageStart = Date.now();
-  const pageTitle = document.title || 'Untitled Page';
-  
-  window.addEventListener('beforeunload', () => {
-    const timeSpent = Math.round((Date.now() - pageStart) / 1000); // in seconds
-    analytics.logEvent('page_timing', {
-      page_title: pageTitle,
-      time_spent_seconds: timeSpent
-    });
-  });
+// Track unique users
+function trackUniqueUser() {
+  if (!analytics || !firebaseInitialized) return;
+
+  try {
+    // Simple user tracking
+    const lastVisit = localStorage.getItem('last_visit_date');
+    const today = new Date().toDateString();
+
+    if (lastVisit !== today) {
+      analytics.logEvent('user_visit', {
+        visit_date: today,
+        page_title: document.title || 'Untitled'
+      });
+
+      localStorage.setItem('last_visit_date', today);
+      console.log('User visit tracked for today');
+    }
+  } catch (error) {
+    console.error('Error tracking user:', error);
+  }
 }
 
 // Track promotion widget interaction
 function trackPromotionInteraction(action, details = {}) {
-  if (!analytics) return;
-  
-  analytics.logEvent('promotion_interaction', {
-    action: action,
-    widget_type: 'notes_keeper',
-    ...details
-  });
-}
-
-// Track user count (unique users)
-function trackUniqueUser() {
-  if (!analytics) return;
-  
-  // Check if user was counted before (using localStorage)
-  const userCounted = localStorage.getItem('user_counted');
-  
-  if (!userCounted) {
-    analytics.logEvent('unique_user', {
-      first_visit: new Date().toISOString()
-    });
-    
-    // Mark user as counted (expires after 24 hours for more accurate daily counts)
-    const expiryTime = Date.now() + (24 * 60 * 60 * 1000);
-    localStorage.setItem('user_counted', 'true');
-    localStorage.setItem('user_counted_expiry', expiryTime);
-  } else {
-    // Check if expired
-    const expiry = localStorage.getItem('user_counted_expiry');
-    if (expiry && Date.now() > parseInt(expiry)) {
-      localStorage.removeItem('user_counted');
-      localStorage.removeItem('user_counted_expiry');
-      trackUniqueUser(); // Recount user
-    }
-  }
-}
-
-// Modified initPromotion function with analytics
-function initPromotion() {
-  const promotion = document.getElementById('promotion');
-  if (!promotion) {
-    console.error('p_romo.js: Element #promotion not found in DOM');
+  if (!analytics || !firebaseInitialized) {
+    console.log('Analytics not ready, promotion tracking delayed');
     return;
   }
 
-  // Initialize Firebase and analytics
-  loadFirebaseScripts()
-    .then(() => {
-      // Track user
-      trackUniqueUser();
-      
-      // Track page view
-      trackPageView();
-      
-      // Track time on page
-      trackTimeOnPage();
-      
-      // Track promotion widget load
-      trackPromotionInteraction('widget_loaded');
-    })
-    .catch(error => {
-      console.error('Failed to load Firebase:', error);
+  try {
+    analytics.logEvent('promotion_action', {
+      action_name: action,
+      page_title: document.title || 'Untitled',
+      page_path: window.location.pathname,
+      ...details
     });
+
+    console.log('Promotion interaction tracked:', action);
+  } catch (error) {
+    console.error('Error tracking promotion:', error);
+  }
+}
+
+// Modified initPromotion function
+function initPromotion() {
+  console.log('🚀 Starting promotion widget...');
+
+  const promotion = document.getElementById('promotion');
+  if (!promotion) {
+    console.error('❌ Element #promotion not found');
+    return;
+  }
+
+  // First, inject the widget (so users see it immediately)
+  createPromotionWidget(promotion);
+
+  // Then try to load Firebase (don't block the widget)
+  setTimeout(() => {
+    loadFirebaseScripts()
+      .then(() => {
+        console.log('✅ Firebase ready, tracking additional data...');
+
+        // Track user after Firebase is ready
+        setTimeout(() => {
+          trackUniqueUser();
+          trackPromotionInteraction('widget_loaded');
+        }, 1000);
+
+      })
+      .catch(error => {
+        console.error('❌ Firebase failed to load:', error);
+      });
+  }, 100);
+}
+
+function createPromotionWidget(promotion) {
+  console.log('Creating promotion widget...');
 
   // Create main container
   const notesKeeper = document.createElement('div');
@@ -184,7 +236,7 @@ function initPromotion() {
     font-family: Arial, sans-serif;
   `;
 
-  // Image container (45x45px)
+  // Image container
   const imgContainer = document.createElement('div');
   imgContainer.style.cssText = `
     width: 45px;
@@ -195,7 +247,7 @@ function initPromotion() {
   `;
 
   const img = document.createElement('img');
-  img.src = 'https://heartquotelabs-cell.github.io/Social_Text_Based/p_romo/hqp/20260212_171406.png';
+  img.src = 'https://cdn.jsdelivr.net/gh/heartquotelabs-cell/Social_Text_Based/p_romo/hqp/20260212_171406.png';
   img.alt = 'logo';
   img.style.cssText = `
     width: 100%;
@@ -213,7 +265,6 @@ function initPromotion() {
     gap: 4px;
   `;
 
-  // Image name
   const nameElement = document.createElement('div');
   nameElement.style.cssText = `
     font-weight: bold;
@@ -222,7 +273,6 @@ function initPromotion() {
   `;
   nameElement.textContent = 'Notes Keeper';
 
-  // Small title showcase (at bottom of name)
   const showcaseTitle = document.createElement('div');
   showcaseTitle.style.cssText = `
     font-size: 12px;
@@ -232,11 +282,8 @@ function initPromotion() {
   `;
   showcaseTitle.textContent = 'Your notes organizer';
 
-  // Right side red button - with style reset
   const button = document.createElement('button');
   button.textContent = 'Get App';
-
-  // Reset ALL inherited styles first
   button.style.cssText = `
     all: initial !important;
     display: inline-block !important;
@@ -261,7 +308,6 @@ function initPromotion() {
     text-shadow: none !important;
   `;
 
-  // Hover effect
   button.addEventListener('mouseenter', () => {
     button.style.backgroundColor = '#cc0000 !important';
   });
@@ -270,20 +316,22 @@ function initPromotion() {
     button.style.backgroundColor = '#ff4444 !important';
   });
 
-  // Click handler - open provided link with analytics tracking
   button.addEventListener('click', function() {
     const link = 'https://apkpure.com/heartquote/com.heartquote/downloading';
-    
-    // Track button click
-    trackPromotionInteraction('button_click', {
-      link_url: link,
-      button_text: 'Get App'
-    });
-    
+
+    // Track click if analytics is available
+    if (analytics && firebaseInitialized) {
+      trackPromotionInteraction('button_click', {
+        link_url: link,
+        button_text: 'Get App'
+      });
+    } else {
+      console.log('Button clicked (analytics not ready)');
+    }
+
     window.open(link, '_blank');
   });
 
-  // Assemble structure
   contentContainer.appendChild(nameElement);
   contentContainer.appendChild(showcaseTitle);
 
@@ -291,12 +339,13 @@ function initPromotion() {
   notesKeeper.appendChild(contentContainer);
   notesKeeper.appendChild(button);
 
-  // Add to page
   promotion.appendChild(notesKeeper);
-  console.log('p_romo.js: Promotion widget injected successfully');
+  console.log('✅ Promotion widget injected');
 }
 
-// Run immediately if DOM is ready, otherwise wait for DOMContentLoaded
+// Start the script
+console.log('📝 Script loaded, waiting for DOM...');
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initPromotion);
 } else {
