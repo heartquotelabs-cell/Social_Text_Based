@@ -1,14 +1,13 @@
 // Firebase configuration - Replace with your own config
 const firebaseConfig = {
-  apiKey: "AIzaSyA9i8N2DdfHV6NB24h8rl5Akkk0N9UQvYI",
-  authDomain: "urdu-poetry-dd4c8.firebaseapp.com",
-  projectId: "urdu-poetry-dd4c8",
-  storageBucket: "urdu-poetry-dd4c8.firebasestorage.app",
-  messagingSenderId: "957402969552",
-  appId: "1:957402969552:web:83643eb2debffa0c2af5d5",
-  measurementId: "G-Q0HFEFD0VW"
-};
-
+    apiKey: "AIzaSyCZCAwncuoDuy033ZrEquCwRvYpacBs8xM",
+    authDomain: "heartquotecommunity.firebaseapp.com",
+    projectId: "heartquotecommunity",
+    storageBucket: "heartquotecommunity.firebasestorage.app",
+    messagingSenderId: "346084161963",
+    appId: "1:346084161963:web:f7ed56dc4a4599f4befaee",
+    measurementId: "G-JGKWQP35QB"
+  };
 // Initialize Firebase
 let analytics = null;
 
