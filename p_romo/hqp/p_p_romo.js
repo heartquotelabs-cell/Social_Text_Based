@@ -7,7 +7,7 @@ const firebaseConfig = {
     appId: "1:346084161963:web:f7ed56dc4a4599f4befaee",
     measurementId: "G-JGKWQP35QB"
   };
-// Initialize Firebase
+// Simple Firebase initialization without the problematic method
 let analytics = null;
 let firebaseInitialized = false;
 
@@ -16,23 +16,28 @@ function loadFirebaseScripts() {
   return new Promise((resolve, reject) => {
     // Check if Firebase is already loaded
     if (window.firebase && window.firebase.analytics) {
+      console.log('Firebase already loaded');
       initializeFirebase();
       resolve();
       return;
     }
 
-    // Load Firebase SDK
+    console.log('Loading Firebase scripts...');
+    
+    // Load Firebase SDK - using older compatible version
     const script1 = document.createElement('script');
-    script1.src = 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js';
+    script1.src = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js';
     
     const script2 = document.createElement('script');
-    script2.src = 'https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics-compat.js';
+    script2.src = 'https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js';
     
     script1.onload = () => {
+      console.log('Firebase App loaded');
       document.head.appendChild(script2);
     };
     
     script2.onload = () => {
+      console.log('Firebase Analytics loaded');
       initializeFirebase();
       resolve();
     };
@@ -52,29 +57,19 @@ function initializeFirebase() {
       firebase.initializeApp(firebaseConfig);
     }
     
-    // Check if analytics is available
-    if (firebase.analytics) {
-      analytics = firebase.analytics();
-      
-      // Enable analytics collection
-      analytics.setAnalyticsCollectionEnabled(true);
-      
-      // Set default parameters
-      analytics.setDefaultEventParameters({
-        app_name: 'HeartQuote',
-        app_version: '1.0.0',
-        environment: 'production'
-      });
-      
-      firebaseInitialized = true;
-      console.log('Firebase Analytics initialized successfully');
-      
-      // Track user engagement after initialization
-      trackUserSession();
-      trackPageView(); // Track initial page view
-    } else {
-      console.error('Firebase Analytics not available');
-    }
+    // Get analytics instance
+    analytics = firebase.analytics();
+    
+    // Enable analytics collection
+    analytics.setAnalyticsCollectionEnabled(true);
+    
+    firebaseInitialized = true;
+    console.log('Firebase Analytics initialized successfully');
+    
+    // Now track the page view
+    trackPageView();
+    trackUserSession();
+    
   } catch (error) {
     console.error('Error initializing Firebase:', error);
   }
@@ -82,22 +77,14 @@ function initializeFirebase() {
 
 // Track user session
 function trackUserSession() {
-  if (!analytics || !firebaseInitialized) {
-    console.log('Analytics not ready for session tracking');
-    return;
-  }
+  if (!analytics || !firebaseInitialized) return;
   
   try {
-    // Track session start with more details
     analytics.logEvent('session_start', {
-      timestamp: new Date().toISOString(),
-      user_agent: navigator.userAgent.substring(0, 100), // Limit length
+      session_start: new Date().toISOString(),
+      user_agent: navigator.userAgent.substring(0, 100),
       language: navigator.language || 'unknown',
-      screen_resolution: `${window.screen.width}x${window.screen.height}`,
-      platform: navigator.platform || 'unknown',
-      referrer: document.referrer || 'direct',
-      page_title: document.title || 'Untitled',
-      page_path: window.location.pathname
+      screen_resolution: `${window.screen.width}x${window.screen.height}`
     });
     
     console.log('Session start tracked');
@@ -108,9 +95,7 @@ function trackUserSession() {
       const sessionDuration = Math.round((Date.now() - sessionStart) / 1000);
       if (analytics && firebaseInitialized) {
         analytics.logEvent('session_end', {
-          duration_seconds: sessionDuration,
-          page_title: document.title || 'Untitled',
-          page_path: window.location.pathname
+          duration_seconds: sessionDuration
         });
       }
     });
@@ -119,10 +104,11 @@ function trackUserSession() {
   }
 }
 
-// Track page view with title
+// Track page view with title - SIMPLIFIED VERSION
 function trackPageView() {
   if (!analytics || !firebaseInitialized) {
-    console.log('Analytics not ready for page view tracking');
+    console.log('Analytics not ready, will retry in 2 seconds...');
+    setTimeout(trackPageView, 2000);
     return;
   }
   
@@ -130,77 +116,30 @@ function trackPageView() {
     const pageTitle = document.title || 'Untitled Page';
     const pagePath = window.location.pathname;
     const pageUrl = window.location.href;
-    const pageHostname = window.location.hostname;
     
-    console.log('Tracking page view:', { pageTitle, pagePath });
+    console.log('📊 TRACKING PAGE VIEW:');
+    console.log('  - Title:', pageTitle);
+    console.log('  - Path:', pagePath);
+    console.log('  - URL:', pageUrl);
     
-    // Set user properties
-    analytics.setUserProperties({
-      last_visited_page: pageTitle,
-      last_visited_path: pagePath
-    });
-    
-    // Track page view event
+    // Send page_view event - using standard event name
     analytics.logEvent('page_view', {
       page_title: pageTitle,
       page_path: pagePath,
-      page_url: pageUrl,
-      page_hostname: pageHostname,
-      timestamp: new Date().toISOString(),
-      engagement_time_msec: 1000 // Minimum engagement time
+      page_location: pageUrl
     });
     
-    // Also track screen_view for better compatibility
+    console.log('✅ Page view tracked successfully');
+    
+    // Also track as screen_view for better compatibility
     analytics.logEvent('screen_view', {
       screen_name: pageTitle,
       screen_class: pagePath
     });
     
-    console.log('Analytics: Page view tracked -', pageTitle);
-    
-    // Track page timing separately
-    trackPageTiming(pageTitle);
-    
   } catch (error) {
     console.error('Error tracking page view:', error);
   }
-}
-
-// Track time spent on specific page
-let pageStartTime = Date.now();
-let currentPageTitle = document.title;
-
-function trackPageTiming(pageTitle) {
-  if (!analytics || !firebaseInitialized) return;
-  
-  // Reset timing for new page
-  pageStartTime = Date.now();
-  currentPageTitle = pageTitle;
-  
-  // Update timing when user leaves page
-  const updatePageTime = () => {
-    const timeSpent = Math.round((Date.now() - pageStartTime) / 1000);
-    if (timeSpent >= 5) { // Only track if spent at least 5 seconds
-      analytics.logEvent('page_timing', {
-        page_title: currentPageTitle,
-        time_spent_seconds: timeSpent,
-        page_path: window.location.pathname,
-        timestamp: new Date().toISOString()
-      });
-      console.log(`Time tracked for ${currentPageTitle}: ${timeSpent}s`);
-    }
-  };
-  
-  // Track on page unload
-  window.addEventListener('beforeunload', updatePageTime);
-  
-  // Track on visibility change (user switches tabs)
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      updatePageTime();
-      pageStartTime = Date.now(); // Reset when user returns
-    }
-  });
 }
 
 // Track unique users
@@ -208,38 +147,18 @@ function trackUniqueUser() {
   if (!analytics || !firebaseInitialized) return;
   
   try {
-    // Generate or retrieve user ID
-    let userId = localStorage.getItem('user_id');
-    if (!userId) {
-      userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('user_id', userId);
-      
-      // Track new user
-      analytics.logEvent('new_user', {
-        user_id: userId,
-        timestamp: new Date().toISOString(),
-        first_page: document.title || 'Untitled',
-        first_page_path: window.location.pathname
-      });
-      console.log('New user tracked:', userId);
-    }
-    
-    // Set user ID for subsequent events
-    analytics.setUserId(userId);
-    
-    // Check if user was counted today
-    const lastCounted = localStorage.getItem('user_counted_date');
+    // Simple user tracking
+    const lastVisit = localStorage.getItem('last_visit_date');
     const today = new Date().toDateString();
     
-    if (lastCounted !== today) {
-      analytics.logEvent('daily_active_user', {
-        user_id: userId,
-        date: today,
+    if (lastVisit !== today) {
+      analytics.logEvent('user_visit', {
+        visit_date: today,
         page_title: document.title || 'Untitled'
       });
       
-      localStorage.setItem('user_counted_date', today);
-      console.log('Daily active user tracked');
+      localStorage.setItem('last_visit_date', today);
+      console.log('User visit tracked for today');
     }
   } catch (error) {
     console.error('Error tracking user:', error);
@@ -249,17 +168,15 @@ function trackUniqueUser() {
 // Track promotion widget interaction
 function trackPromotionInteraction(action, details = {}) {
   if (!analytics || !firebaseInitialized) {
-    console.log('Analytics not ready for promotion tracking');
+    console.log('Analytics not ready, promotion tracking delayed');
     return;
   }
   
   try {
-    analytics.logEvent('promotion_interaction', {
-      action: action,
-      widget_type: 'notes_keeper',
+    analytics.logEvent('promotion_action', {
+      action_name: action,
       page_title: document.title || 'Untitled',
       page_path: window.location.pathname,
-      timestamp: new Date().toISOString(),
       ...details
     });
     
@@ -269,56 +186,40 @@ function trackPromotionInteraction(action, details = {}) {
   }
 }
 
-// Check if Firebase is properly configured
-function validateFirebaseConfig() {
-  const requiredFields = ['apiKey', 'authDomain', 'projectId', 'appId'];
-  for (const field of requiredFields) {
-    if (!firebaseConfig[field] || firebaseConfig[field] === `YOUR_${field.toUpperCase()}`) {
-      console.error(`Firebase ${field} is not properly configured`);
-      return false;
-    }
-  }
-  return true;
-}
-
-// Modified initPromotion function with analytics
+// Modified initPromotion function
 function initPromotion() {
+  console.log('🚀 Starting promotion widget...');
+  
   const promotion = document.getElementById('promotion');
   if (!promotion) {
-    console.error('p_romo.js: Element #promotion not found in DOM');
+    console.error('❌ Element #promotion not found');
     return;
   }
 
-  // Validate and initialize Firebase
-  if (validateFirebaseConfig()) {
+  // First, inject the widget (so users see it immediately)
+  createPromotionWidget(promotion);
+  
+  // Then try to load Firebase (don't block the widget)
+  setTimeout(() => {
     loadFirebaseScripts()
       .then(() => {
-        console.log('Firebase scripts loaded successfully');
+        console.log('✅ Firebase ready, tracking additional data...');
         
-        // Small delay to ensure analytics is ready
+        // Track user after Firebase is ready
         setTimeout(() => {
-          // Track user
           trackUniqueUser();
-          
-          // Track page view
-          trackPageView();
-          
-          // Track promotion widget load
           trackPromotionInteraction('widget_loaded');
-          
-          // Set up mutation observer to detect page title changes (for SPA)
-          observePageTitleChanges();
         }, 1000);
+        
       })
       .catch(error => {
-        console.error('Failed to load Firebase:', error);
+        console.error('❌ Firebase failed to load:', error);
       });
-  } else {
-    console.warn('Firebase not configured properly. Skipping analytics.');
-  }
+  }, 100);
+}
 
-  // Rest of your promotion widget code remains the same...
-  // [Keep all your existing widget creation code here]
+function createPromotionWidget(promotion) {
+  console.log('Creating promotion widget...');
   
   // Create main container
   const notesKeeper = document.createElement('div');
@@ -335,7 +236,7 @@ function initPromotion() {
     font-family: Arial, sans-serif;
   `;
 
-  // Image container (45x45px)
+  // Image container
   const imgContainer = document.createElement('div');
   imgContainer.style.cssText = `
     width: 45px;
@@ -364,7 +265,6 @@ function initPromotion() {
     gap: 4px;
   `;
 
-  // Image name
   const nameElement = document.createElement('div');
   nameElement.style.cssText = `
     font-weight: bold;
@@ -373,7 +273,6 @@ function initPromotion() {
   `;
   nameElement.textContent = 'Notes Keeper';
 
-  // Small title showcase (at bottom of name)
   const showcaseTitle = document.createElement('div');
   showcaseTitle.style.cssText = `
     font-size: 12px;
@@ -383,11 +282,8 @@ function initPromotion() {
   `;
   showcaseTitle.textContent = 'Your notes organizer';
 
-  // Right side red button - with style reset
   const button = document.createElement('button');
   button.textContent = 'Get App';
-
-  // Reset ALL inherited styles first
   button.style.cssText = `
     all: initial !important;
     display: inline-block !important;
@@ -412,7 +308,6 @@ function initPromotion() {
     text-shadow: none !important;
   `;
 
-  // Hover effect
   button.addEventListener('mouseenter', () => {
     button.style.backgroundColor = '#cc0000 !important';
   });
@@ -421,20 +316,22 @@ function initPromotion() {
     button.style.backgroundColor = '#ff4444 !important';
   });
 
-  // Click handler - open provided link with analytics tracking
   button.addEventListener('click', function() {
     const link = 'https://apkpure.com/heartquote/com.heartquote/downloading';
     
-    // Track button click
-    trackPromotionInteraction('button_click', {
-      link_url: link,
-      button_text: 'Get App'
-    });
+    // Track click if analytics is available
+    if (analytics && firebaseInitialized) {
+      trackPromotionInteraction('button_click', {
+        link_url: link,
+        button_text: 'Get App'
+      });
+    } else {
+      console.log('Button clicked (analytics not ready)');
+    }
     
     window.open(link, '_blank');
   });
 
-  // Assemble structure
   contentContainer.appendChild(nameElement);
   contentContainer.appendChild(showcaseTitle);
 
@@ -442,33 +339,13 @@ function initPromotion() {
   notesKeeper.appendChild(contentContainer);
   notesKeeper.appendChild(button);
 
-  // Add to page
   promotion.appendChild(notesKeeper);
-  console.log('p_romo.js: Promotion widget injected successfully');
+  console.log('✅ Promotion widget injected');
 }
 
-// Observe page title changes (for Single Page Applications)
-function observePageTitleChanges() {
-  const titleElement = document.querySelector('title');
-  if (!titleElement) return;
-  
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'childList' || mutation.type === 'characterData') {
-        console.log('Page title changed to:', document.title);
-        trackPageView(); // Track new page view when title changes
-      }
-    });
-  });
-  
-  observer.observe(titleElement, { 
-    childList: true, 
-    characterData: true,
-    subtree: true 
-  });
-}
+// Start the script
+console.log('📝 Script loaded, waiting for DOM...');
 
-// Run immediately if DOM is ready, otherwise wait for DOMContentLoaded
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initPromotion);
 } else {
