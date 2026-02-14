@@ -228,7 +228,7 @@ function createPromotionWidget(promotion) {
   const notesKeeper = document.createElement('div');
   notesKeeper.id = 'notes-keeper';
   notesKeeper.style.cssText = `
-    display: flex;
+    display: none;
     align-items: center;
     gap: 15px;
     padding: 15px;
