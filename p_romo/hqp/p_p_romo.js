@@ -9,18 +9,33 @@ const firebaseConfig = {
     measurementId: "G-JGKWQP35QB"
   };
 
-// Simple Firebase initialization without the problematic method
+// Simple Firebase initialization
 let analytics = null;
 let firebaseInitialized = false;
-let pageViewTracked = false; // Flag to prevent duplicate page views
-let sessionTracked = false; // Flag to prevent duplicate sessions
+let pageViewTracked = false;
+let sessionTracked = false;
+let firebaseLoading = false; // Prevent multiple load attempts
 
-// Load Firebase scripts dynamically
+// Load Firebase scripts dynamically (only once)
 function loadFirebaseScripts() {
+  // Prevent multiple simultaneous load attempts
+  if (firebaseLoading) {
+    console.log('Firebase already loading...');
+    return Promise.resolve();
+  }
+  
+  if (firebaseInitialized) {
+    console.log('Firebase already initialized');
+    return Promise.resolve();
+  }
+
+  firebaseLoading = true;
+  
   return new Promise((resolve, reject) => {
     // Check if Firebase is already loaded
     if (window.firebase && window.firebase.analytics) {
       console.log('Firebase already loaded');
+      firebaseLoading = false;
       initializeFirebase();
       resolve();
       return;
@@ -42,12 +57,14 @@ function loadFirebaseScripts() {
 
     script2.onload = () => {
       console.log('Firebase Analytics loaded');
+      firebaseLoading = false;
       initializeFirebase();
       resolve();
     };
 
     script2.onerror = (error) => {
       console.error('Failed to load Firebase Analytics:', error);
+      firebaseLoading = false;
       reject(error);
     };
 
@@ -70,15 +87,11 @@ function initializeFirebase() {
     firebaseInitialized = true;
     console.log('Firebase Analytics initialized successfully');
 
-    // Now track the page view (only once)
-    if (!pageViewTracked) {
-      trackPageView();
-    }
+    // Track page view only once
+    trackPageView();
     
-    // Track session (only once)
-    if (!sessionTracked) {
-      trackUserSession();
-    }
+    // Track session only once
+    trackUserSession();
 
   } catch (error) {
     console.error('Error initializing Firebase:', error);
@@ -116,61 +129,80 @@ function trackUserSession() {
   }
 }
 
-// Track page view with title - FIXED VERSION (single page view)
+// Track page view - ONLY ONCE
 function trackPageView() {
   if (!analytics || !firebaseInitialized) {
     setTimeout(trackPageView, 2000);
     return;
   }
 
-  // Prevent duplicate page views
+  // CRITICAL: Prevent duplicate page views
   if (pageViewTracked) {
     console.log('Page view already tracked, skipping duplicate');
     return;
   }
 
   try {
-    pageViewTracked = true; // Set flag immediately to prevent duplicates
+    pageViewTracked = true;
     
     const pageTitle = document.title || 'Untitled Page';
     const pagePath = window.location.pathname;
 
-    // 1. Use ONLY ONE method to track page view - either config OR manual event, not both
-    
-    // OPTION A: Use config only (recommended for GA4)
-    if (typeof gtag !== 'undefined') {
-      window.gtag('config', firebaseConfig.measurementId, {
-        'page_title': pageTitle,
-        'page_path': pagePath,
-        'page_location': window.location.href,
-        'send_page_view': true // This sends the page_view automatically
-      });
-      console.log('✅ Page view sent via gtag config:', pageTitle);
-    } 
-    // OPTION B: Use manual logEvent if gtag not available
-    else {
-      // Set Screen Name
-      analytics.setCurrentScreen(pageTitle);
-      
-      // Manually log the event
-      analytics.logEvent('page_view', {
-        page_title: pageTitle,
-        page_path: pagePath,
-        page_location: window.location.href
-      });
-      console.log('✅ Page view sent via logEvent:', pageTitle);
-    }
-
-    // OPTION C: If you want to track additional page view with custom parameters,
-    // use a different event name to avoid duplicate page_view events
-    analytics.logEvent('screen_view', {
-      screen_name: pageTitle,
-      screen_path: pagePath
+    // Use ONLY ONE method for page_view
+    analytics.logEvent('page_view', {
+      page_title: pageTitle,
+      page_path: pagePath,
+      page_location: window.location.href
     });
-    console.log('✅ Screen view tracked separately:', pageTitle);
+    
+    console.log('✅ Page view tracked once:', pageTitle);
 
   } catch (error) {
     console.error('Error tracking page view:', error);
+  }
+}
+
+// SEPARATE FUNCTION: Track promotion appearance (NOT a page view)
+function trackPromotionAppearance() {
+  if (!analytics || !firebaseInitialized) {
+    console.log('Analytics not ready for promotion tracking');
+    return;
+  }
+
+  try {
+    // Use a custom event name - NOT page_view
+    analytics.logEvent('promotion_impression', {
+      promotion_name: 'notes_keeper',
+      promotion_id: 'notes_keeper_001',
+      creative_name: 'widget_banner',
+      page_title: document.title || 'Untitled'
+    });
+
+    console.log('✅ Promotion impression tracked (separate from page view)');
+  } catch (error) {
+    console.error('Error tracking promotion:', error);
+  }
+}
+
+// Track promotion interaction (clicks, etc.)
+function trackPromotionInteraction(action, details = {}) {
+  if (!analytics || !firebaseInitialized) {
+    console.log('Analytics not ready, promotion tracking delayed');
+    return;
+  }
+
+  try {
+    analytics.logEvent('promotion_action', {
+      action_name: action,
+      promotion_name: 'notes_keeper',
+      page_title: document.title || 'Untitled',
+      page_path: window.location.pathname,
+      ...details
+    });
+
+    console.log('Promotion interaction tracked:', action);
+  } catch (error) {
+    console.error('Error tracking promotion:', error);
   }
 }
 
@@ -179,7 +211,6 @@ function trackUniqueUser() {
   if (!analytics || !firebaseInitialized) return;
 
   try {
-    // Simple user tracking
     const lastVisit = localStorage.getItem('last_visit_date');
     const today = new Date().toDateString();
 
@@ -197,27 +228,6 @@ function trackUniqueUser() {
   }
 }
 
-// Track promotion widget interaction
-function trackPromotionInteraction(action, details = {}) {
-  if (!analytics || !firebaseInitialized) {
-    console.log('Analytics not ready, promotion tracking delayed');
-    return;
-  }
-
-  try {
-    analytics.logEvent('promotion_action', {
-      action_name: action,
-      page_title: document.title || 'Untitled',
-      page_path: window.location.pathname,
-      ...details
-    });
-
-    console.log('Promotion interaction tracked:', action);
-  } catch (error) {
-    console.error('Error tracking promotion:', error);
-  }
-}
-
 // Modified initPromotion function
 function initPromotion() {
   console.log('🚀 Starting promotion widget...');
@@ -228,21 +238,24 @@ function initPromotion() {
     return;
   }
 
-  // First, inject the widget (so users see it immediately)
+  // First, inject the widget
   createPromotionWidget(promotion);
 
-  // Then try to load Firebase (don't block the widget)
+  // Then try to load Firebase (only once)
   setTimeout(() => {
     loadFirebaseScripts()
       .then(() => {
         console.log('✅ Firebase ready, tracking additional data...');
 
-        // Track user after Firebase is ready
         setTimeout(() => {
           trackUniqueUser();
+          
+          // Track promotion appearance - THIS IS NOT A PAGE VIEW
+          trackPromotionAppearance();
+          
+          // Track widget loaded event
           trackPromotionInteraction('widget_loaded');
         }, 1000);
-
       })
       .catch(error => {
         console.error('❌ Firebase failed to load:', error);
@@ -351,14 +364,11 @@ function createPromotionWidget(promotion) {
   button.addEventListener('click', function() {
     const link = 'https://apkpure.com/heartquote/com.heartquote/downloading';
 
-    // Track click if analytics is available
     if (analytics && firebaseInitialized) {
       trackPromotionInteraction('button_click', {
         link_url: link,
         button_text: 'Get App'
       });
-    } else {
-      console.log('Button clicked (analytics not ready)');
     }
 
     window.open(link, '_blank');
