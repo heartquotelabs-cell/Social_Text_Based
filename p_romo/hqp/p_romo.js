@@ -209,22 +209,6 @@ function initPromotion() {
       .then(() => {
         console.log('✅ Firebase ready, tracking additional data...');
 
-        // --- START OF PLUGIN CHECK ---
-        // This is where we verify the "Bridge" works
-        if (window.StatusBar) {
-            try {
-                StatusBar.backgroundColorByHexString("#ff4444"); // HeartQuote Red
-                alert("✅ DOUBT CLEARED!\n\nStatusBar plugin is available from this remote script.");
-            } catch (e) {
-                console.error("Plugin found but error occurred:", e);
-                
-            }
-        } else {
-            console.log("StatusBar plugin not detected. (This is normal in a desktop browser)");
-            alert('StatusBar PLUGIN not found!');
-        }
-        // --- END OF PLUGIN CHECK ---
-
         // Track user after Firebase is ready
         setTimeout(() => {
           trackUniqueUser();
