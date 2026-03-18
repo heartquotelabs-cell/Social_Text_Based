@@ -678,6 +678,7 @@ async function initBanner(npa) {
                 adUnitId : ADMOB_CONFIG.banner,
                 position : 'bottom',
                 npa      : npa,
+                size     : 'BANNER',
             });
 
             window.admobBanner.on('load', async () => {
