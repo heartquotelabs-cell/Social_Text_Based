@@ -1,4 +1,3 @@
-// Firebase configuration - Replace with your own config
 const firebaseConfig = {
     apiKey: "AIzaSyCZCAwncuoDuy033ZrEquCwRvYpacBs8xM",
     authDomain: "heartquotecommunity.firebaseapp.com",
@@ -6,17 +5,12 @@ const firebaseConfig = {
     storageBucket: "heartquotecommunity.firebasestorage.app",
     messagingSenderId: "346084161963",
     appId: "1:346084161963:web:f7ed56dc4a4599f4befaee",
-    measurementId: "G-JGKWQP35QB"
-  };
-
-// Simple Firebase initialization
+    measurementId: "G-JGKWQP35QB"};
 let analytics = null;
 let firebaseInitialized = false;
 let pageViewTracked = false;
 let sessionTracked = false;
-let firebaseLoading = false; // Prevent multiple load attempts
-
-// Load Firebase scripts dynamically (only once)
+let firebaseLoading = false; 
 function loadFirebaseScripts() {
   // Prevent multiple simultaneous load attempts
   if (firebaseLoading) {
@@ -71,7 +65,6 @@ function loadFirebaseScripts() {
     document.head.appendChild(script1);
   });
 }
-
 function initializeFirebase() {
   try {
     if (!firebase.apps.length) {
@@ -97,8 +90,6 @@ function initializeFirebase() {
     console.error('Error initializing Firebase:', error);
   }
 }
-
-// Track user session
 function trackUserSession() {
   if (!analytics || !firebaseInitialized || sessionTracked) return;
 
@@ -128,8 +119,6 @@ function trackUserSession() {
     console.error('Error tracking session:', error);
   }
 }
-
-// Track page view - ONLY ONCE
 function trackPageView() {
   if (!analytics || !firebaseInitialized) {
     setTimeout(trackPageView, 2000);
@@ -161,8 +150,6 @@ function trackPageView() {
     console.error('Error tracking page view:', error);
   }
 }
-
-// SEPARATE FUNCTION: Track promotion appearance (NOT a page view)
 function trackPromotionAppearance() {
   if (!analytics || !firebaseInitialized) {
     console.log('Analytics not ready for promotion tracking');
@@ -183,8 +170,6 @@ function trackPromotionAppearance() {
     console.error('Error tracking promotion:', error);
   }
 }
-
-// Track promotion interaction (clicks, etc.)
 function trackPromotionInteraction(action, details = {}) {
   if (!analytics || !firebaseInitialized) {
     console.log('Analytics not ready, promotion tracking delayed');
@@ -205,8 +190,6 @@ function trackPromotionInteraction(action, details = {}) {
     console.error('Error tracking promotion:', error);
   }
 }
-
-// Track unique users
 function trackUniqueUser() {
   if (!analytics || !firebaseInitialized) return;
 
@@ -237,36 +220,23 @@ function initPromotion() {
     console.error('❌ Element #promotion not found');
     return;
   }
-
-  // First, inject the widget
   createPromotionWidget(promotion);
-
-  // Then try to load Firebase (only once)
-  setTimeout(() => {
+ setTimeout(() => {
     loadFirebaseScripts()
       .then(() => {
-        console.log('✅ Firebase ready, tracking additional data...');
-
         setTimeout(() => {
           trackUniqueUser();
-
-          // Track promotion appearance - THIS IS NOT A PAGE VIEW
           trackPromotionAppearance();
-
-          // Track widget loaded event
-          trackPromotionInteraction('widget_loaded');
+ trackPromotionInteraction('widget_loaded');
         }, 1000);
       })
       .catch(error => {
         console.error('❌ Firebase failed to load:', error);
       });
-  }, 100);
-}
+  }, 100);}
 
 function createPromotionWidget(promotion) {
   console.log('Creating promotion widget...');
-
-  // Create main container
   const notesKeeper = document.createElement('div');
   notesKeeper.id = 'notes-keeper';
   notesKeeper.style.cssText = `
@@ -280,8 +250,6 @@ function createPromotionWidget(promotion) {
     max-width: 600px;
     font-family: Arial, sans-serif;
   `;
-
-  // Image container
   const imgContainer = document.createElement('div');
   imgContainer.style.cssText = `
     width: 45px;
@@ -300,8 +268,6 @@ function createPromotionWidget(promotion) {
     object-fit: cover;
   `;
   imgContainer.appendChild(img);
-
-  // Content container
   const contentContainer = document.createElement('div');
   contentContainer.style.cssText = `
     flex: 1;
@@ -309,7 +275,6 @@ function createPromotionWidget(promotion) {
     flex-direction: column;
     gap: 4px;
   `;
-
   const nameElement = document.createElement('div');
   nameElement.style.cssText = `
     font-weight: bold;
@@ -394,44 +359,24 @@ if (document.readyState === 'loading') {
   initPromotion();
 }
 
-
-
-
-
-
-
-
-
-// ============================================
 // CONFIGURATION
-// ============================================
 const ADMOB_CONFIG = {
-    testDevices  : ['f5af6f48-23f7-412f-af01-4ee218d6893a'],
-    banner       : 'ca-app-pub-3940256099942544/6300978111',
-    appOpen      : 'ca-app-pub-3940256099942544/9257395921',
-    interstitial : 'ca-app-pub-3940256099942544/1033173712',
+    testDevices  : [''],
+    banner       : 'ca-app-pub-5188642994982403/7847467013',
+    appOpen      : 'ca-app-pub-5188642994982403/4281888101',
+    interstitial : 'ca-app-pub-5188642994982403/1811807909',
 };
 
+const APP_OPEN_EXPIRY_MS = 4 * 60 * 60 * 1000;
+const INTERSTITIAL_COOLDOWN_MS = 60 * 1000;
+const MAX_RETRY_ATTEMPTS  = 3; 
+const RETRY_DELAY_MS   = 5 * 1000;
 
-const APP_OPEN_EXPIRY_MS       = 4 * 60 * 60 * 1000; // 4 hours
-const INTERSTITIAL_COOLDOWN_MS = 60 * 1000;           // 1 minute
-const MAX_RETRY_ATTEMPTS       = 3;                   // Max retries
-const RETRY_DELAY_MS           = 5 * 1000;            // 5 seconds
-
-
-// ============================================
 // UTILITIES
-// ============================================
 function wait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
-// ============================================
-// HELPERS — Single source of truth
-// ============================================
-
-// Privacy button only for EEA/US regulated users
 function shouldShowPrivacyButton() {
     const s = window.admobConsentStatus;
     // 1 = Required (EEA/US user, not consented yet)
@@ -439,23 +384,15 @@ function shouldShowPrivacyButton() {
     return s === 1 || s === 3;
 }
 
-// Watch Ad button only shows when:
-// 1. Ad is loaded
-// 2. Non EEA/US users — immediately
-// 3. EEA/US users — only after consent dialog done
+// Watch Ad button
 function shouldShowWatchAdButton() {
     const s = window.admobConsentStatus;
     // 0 = Unknown     → consent not done yet → hide
     // 1 = Required    → consent form not shown yet → hide
     // 2 = NotRequired → outside EEA/US → show ✅
     // 3 = Obtained    → EEA/US consented → show ✅
-    return s === 2 || s === 3;
-}
+    return s === 2 || s === 3;}
 
-
-// ============================================
-// CREATE WATCH AD BUTTON VIA JAVASCRIPT
-// ============================================
 function createWatchAdButton() {
     if (document.getElementById('watchAdBtn')) return;
 
@@ -884,14 +821,9 @@ async function showInterstitialAd() {
 
     } catch(e) {
         interstitialShowing = false;
-        if (window.admobBanner) await window.admobBanner.show();
-    }
-}
+        if (window.admobBanner) await window.admobBanner.show();}}
 
-
-// ============================================
 // MASTER INIT — Entry point for everything
-// ============================================
 document.addEventListener('deviceready', async () => {
 
     // Step 1 — Create buttons, hide both by default
@@ -903,10 +835,6 @@ document.addEventListener('deviceready', async () => {
     // Step 2 — Run consent + admob start ONCE only
     if (!window.admobConsentDone) {
 
-        await admob.configure({
-            testDevices: ADMOB_CONFIG.testDevices,
-        });
-
         await admob.start();
 
         // Consent MUST happen before any ads
@@ -915,18 +843,11 @@ document.addEventListener('deviceready', async () => {
         window.admobNpa           = canRequest ? 0 : 1;
 
     } else {
-
-        // Already initialized — restore consent status on new page
-        // Re-check buttons based on stored consent status
         if (shouldShowPrivacyButton()) {
             showPrivacyButton();
         } else {
             hidePrivacyButton();
-        }
-
-    }
-
-    // Step 3 — Banner show/hide per page
+        }}
     await initBanner(window.admobNpa);
 
     // Step 4 — App Open Ad once
@@ -934,12 +855,8 @@ document.addEventListener('deviceready', async () => {
         await loadAppOpenAd(window.admobNpa);
     }
 
-    // Step 5 — Interstitial once
     if (!window.admobInterstitialReady) {
     await loadInterstitialAd(window.admobNpa);
     } else {
-        // Already loaded — show button if consent allows
-        showWatchAdButton();
-    }
-
+        showWatchAdButton(); }
 }, false);
