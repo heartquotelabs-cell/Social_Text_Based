@@ -466,14 +466,14 @@ function createWatchAdButton() {
     Object.assign(btn.style, {
         display        : 'none',
         position       : 'fixed',
-        top            : '7px',
+        bottom            : '60px',
         right          : '15px',
         zIndex         : '9999',
-        background     : '#FF6600',
+        background     : '#1e1e1e',
         border         : 'none',
         borderRadius   : '50%',
-        width          : '35px',
-        height         : '35px',
+        width          : '50px',
+        height         : '50px',
         cursor         : 'pointer',
         boxShadow      : '0 2px 6px rgba(0,0,0,0.4)',
         alignItems     : 'center',
@@ -487,7 +487,7 @@ function createWatchAdButton() {
 
     Object.assign(icon.style, {
         color         : 'white',
-        fontSize      : '18px',
+        fontSize      : '20px',
         pointerEvents : 'none',
     });
 
@@ -528,7 +528,7 @@ function createPrivacyButton() {
     Object.assign(btn.style, {
         display        : 'none',
         position       : 'fixed',
-        bottom         : '65px',
+        bottom         : '35px',
         left           : '10px',
         zIndex         : '9999',
         background     : 'rgba(0,0,0,0.5)',
