@@ -368,7 +368,7 @@ const ADMOB_CONFIG = {
 };
 
 const APP_OPEN_EXPIRY_MS = 4 * 60 * 60 * 1000;
-const INTERSTITIAL_COOLDOWN_MS = 60 * 1000;
+const INTERSTITIAL_COOLDOWN_MS = 3 * 60 * 1000;
 const MAX_RETRY_ATTEMPTS  = 3; 
 const RETRY_DELAY_MS   = 5 * 1000;
 
@@ -704,16 +704,16 @@ async function showAppOpenAd() {
         appOpenIsShowing = true;
 
         if (window.admobBanner) await window.admobBanner.hide();
-
-        appOpenAd.on('dismiss', async () => {
-            appOpenIsShowing         = false;
-            appOpenAd                = null;
-            appOpenReady             = false;
-            window.admobAppOpenReady = false;
-
-            if (window.admobBanner) await window.admobBanner.show();
-            await loadAppOpenAd(window.admobNpa);
-        });
+appOpenAd.on('dismiss', async () => {
+    appOpenIsShowing         = false;
+    appOpenLastShown         = Date.now();
+    appOpenAd                = null;
+    appOpenReady             = false;
+    window.admobAppOpenReady = false;
+    if (window.admobBanner) await window.admobBanner.show();
+    await loadAppOpenAd(window.admobNpa);
+});
+  
 
         appOpenAd.on('error', async () => {
             appOpenIsShowing         = false;
@@ -733,7 +733,11 @@ async function showAppOpenAd() {
     }
 }
 
+let appOpenLastShown = 0;
+const APP_OPEN_COOLDOWN_MS = 2 * 60 * 60 * 1000; // 2 hours
+
 document.addEventListener('resume', async () => {
+    if ((Date.now() - appOpenLastShown) < APP_OPEN_COOLDOWN_MS) return;
     await showAppOpenAd();
 }, false);
 
