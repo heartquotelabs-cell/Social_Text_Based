@@ -558,6 +558,143 @@ if (window.admobBanner) await window.admobBanner.show();
 }
 }
 
+// ========== BALANCED AD TRIGGERS (Your Approved Plan) ==========
+// No changes to consent code - everything below just calls existing functions
+
+let adTriggersInitialized = false;
+let hasShownFirstInterstitial = false;
+let lastAdTriggerTime = 0;
+let lastPageType = '';
+
+// Track when we manually show ads to respect cooldowns
+let manualInterstitialLastShown = 0;
+let manualAppOpenLastShown = 0;
+
+const MANUAL_INTERSTITIAL_COOLDOWN = 3 * 60 * 1000; // 3 minutes
+const MANUAL_APP_OPEN_COOLDOWN = 2 * 60 * 1000;     // 2 minutes
+
+function canShowManualInterstitial() {
+    // Check consent using your existing function
+    if (typeof shouldShowWatchAdButton === 'function' && !shouldShowWatchAdButton()) {
+        console.log('[Ad] Consent prevents interstitial');
+        return false;
+    }
+    
+    const now = Date.now();
+    if (now - manualInterstitialLastShown < MANUAL_INTERSTITIAL_COOLDOWN) {
+        console.log('[Ad] Manual interstitial cooldown active');
+        return false;
+    }
+    
+    return true;
+}
+
+function canShowManualAppOpen() {
+    const now = Date.now();
+    if (now - manualAppOpenLastShown < MANUAL_APP_OPEN_COOLDOWN) {
+        console.log('[Ad] Manual app open cooldown active');
+        return false;
+    }
+    return true;
+}
+
+// 1. Interstitial: First time user navigates to ANY category
+function onFirstCategoryNavigation() {
+    if (!hasShownFirstInterstitial && canShowManualInterstitial()) {
+        hasShownFirstInterstitial = true;
+        manualInterstitialLastShown = Date.now();
+        console.log('[Ad] First interstitial - category navigation');
+        setTimeout(() => {
+            if (typeof showInterstitialAd === 'function') {
+                showInterstitialAd();
+            }
+        }, 500);
+    }
+}
+
+// 2. Interstitial: After cooldown, on next category navigation
+function onSubsequentCategoryNavigation() {
+    if (hasShownFirstInterstitial && canShowManualInterstitial()) {
+        manualInterstitialLastShown = Date.now();
+        console.log('[Ad] Subsequent interstitial (cooldown passed)');
+        setTimeout(() => {
+            if (typeof showInterstitialAd === 'function') {
+                showInterstitialAd();
+            }
+        }, 500);
+    }
+}
+
+// 3. App Open: When user navigates back to home
+function onBackToHomeTrigger() {
+    if (canShowManualAppOpen()) {
+        manualAppOpenLastShown = Date.now();
+        console.log('[Ad] App open - back to home');
+        setTimeout(() => {
+            if (typeof showAppOpenAd === 'function') {
+                showAppOpenAd();
+            }
+        }, 300);
+    }
+}
+
+// DOM Observer to detect page changes (no mindex.js modification needed)
+function setupPageWatcher() {
+    const viewport = document.getElementById('page-viewport');
+    if (!viewport) {
+        setTimeout(setupPageWatcher, 500);
+        return;
+    }
+    
+    const observer = new MutationObserver(() => {
+        const activePage = document.querySelector('.page-layer.page--active');
+        if (!activePage) return;
+        
+        // Detect if current page is home or category
+        const isHome = activePage.querySelector('.home-section') !== null;
+        const isCategory = !isHome && (activePage.querySelector('.btn-grid-item') !== null || activePage.querySelector('.quote-box') !== null);
+        
+        const currentPageType = isHome ? 'home' : (isCategory ? 'category' : 'other');
+        
+        if (currentPageType !== lastPageType) {
+            console.log('[Ad] Page change detected:', lastPageType, '->', currentPageType);
+            
+            if (currentPageType === 'category') {
+                // User navigated TO a category
+                if (!hasShownFirstInterstitial) {
+                    onFirstCategoryNavigation();
+                } else {
+                    onSubsequentCategoryNavigation();
+                }
+            } else if (currentPageType === 'home' && lastPageType === 'category') {
+                // User navigated BACK to home
+                onBackToHomeTrigger();
+            }
+            
+            lastPageType = currentPageType;
+        }
+    });
+    
+    observer.observe(viewport, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class']
+    });
+    
+    // Initial check
+    setTimeout(() => {
+        const activePage = document.querySelector('.page-layer.page--active');
+        if (activePage) {
+            const isHome = activePage.querySelector('.home-section') !== null;
+            lastPageType = isHome ? 'home' : 'category';
+            console.log('[Ad] Initial page type:', lastPageType);
+        }
+    }, 1000);
+    
+    console.log('[Ad] Page watcher initialized');
+}
+
 document.addEventListener('deviceready', async () => {
 
 createWatchAdButton();
@@ -590,4 +727,15 @@ await loadInterstitialAd(window.admobNpa);
 } else {
 showWatchAdButton();
 }
+
+// ========== INITIALIZE BALANCED AD TRIGGERS ==========
+// This starts the page watcher that detects navigation
+if (!adTriggersInitialized) {
+    adTriggersInitialized = true;
+    setTimeout(() => {
+        setupPageWatcher();
+        console.log('[Ad] Balanced ad triggers ready - respecting consent & cooldowns');
+    }, 2000);
+}
+
 }, false);
