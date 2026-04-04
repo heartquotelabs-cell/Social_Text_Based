@@ -137,84 +137,23 @@ interstitial : 'ca-app-pub-5188642994982403/1811807909',
 
 const APP_OPEN_EXPIRY_MS = 4 * 60 * 60 * 1000;
 const INTERSTITIAL_COOLDOWN_MS = 3 * 60 * 1000;
+const APP_OPEN_COOLDOWN_MS = 15 * 60 * 1000;
 const MAX_RETRY_ATTEMPTS  = 3;
 const RETRY_DELAY_MS   = 5 * 1000;
 
 function wait(ms) {
-return new Promise(resolve => setTimeout(resolve, ms));
-}
+return new Promise(resolve => setTimeout(resolve, ms));}
 
 function shouldShowPrivacyButton() {
 const s = window.admobConsentStatus;
-return s === 1 || s === 3;
-}
+return s === 1 || s === 3;}
 
 function shouldShowWatchAdButton() {
 const s = window.admobConsentStatus;
-return s === 2 || s === 3;
-}
-
-function createWatchAdButton() {
-if (document.getElementById('watchAdBtn')) return;
-
-const btn  = document.createElement('button');
-btn.id     = 'watchAdBtn';
-btn.title  = 'Watch Ad';
-
-Object.assign(btn.style, {
-display        : 'none',
-position       : 'fixed',
-bottom            : '20px',
-right          : '16px',
-zIndex         : '9999',
-background     : '#1e1e1e',
-border         : 'none',
-borderRadius   : '50%',
-width          : '45px',
-height         : '45px',
-cursor         : 'pointer',
-boxShadow      : '0 2px 6px rgba(0,0,0,0.4)',
-alignItems     : 'center',
-justifyContent : 'center',
-padding        : '0',
-outline        : 'none',
-});
-
-const icon     = document.createElement('i');
-icon.className = 'fas fa-video';
-
-Object.assign(icon.style, {
-color         : 'white',
-fontSize      : '18px',
-pointerEvents : 'none',
-});
-
-btn.appendChild(icon);
-document.body.appendChild(btn);
-
-btn.addEventListener('click', async () => {
-await showInterstitialAd();
-});
-}
-
-function showWatchAdButton() {
-if (!shouldShowWatchAdButton()) return;
-const btn = document.getElementById('watchAdBtn');
-if (btn) {
-btn.style.display        = 'flex';
-btn.style.alignItems     = 'center';
-btn.style.justifyContent = 'center';
-}
-}
-
-function hideWatchAdButton() {
-const btn = document.getElementById('watchAdBtn');
-if (btn) btn.style.display = 'none';
-}
+return s === 2 || s === 3;}
 
 function createPrivacyButton() {
 if (document.getElementById('privacyBtn')) return;
-
 const btn  = document.createElement('button');
 btn.id     = 'privacyBtn';
 btn.title  = 'Privacy Settings';
@@ -331,10 +270,6 @@ if (shouldShowPrivacyButton()) {
 showPrivacyButton();
 } else {
 hidePrivacyButton();
-}
-
-if (!shouldShowWatchAdButton()) {
-hideWatchAdButton();
 }
 
 return await consent.canRequestAds();
@@ -468,7 +403,6 @@ if (window.admobBanner) await window.admobBanner.show();
 }
 
 let appOpenLastShown = 0;
-const APP_OPEN_COOLDOWN_MS = 2 * 60 * 60 * 1000;
 
 document.addEventListener('resume', async () => {
 if ((Date.now() - appOpenLastShown) < APP_OPEN_COOLDOWN_MS) return;
@@ -499,7 +433,7 @@ interstitialReady             = true;
 interstitialRetries           = 0;
 window.admobInterstitialReady = true;
 
-showWatchAdButton();
+// REMOVED: showWatchAdButton() call
 
 } catch(e) {
 interstitialAd                = null;
@@ -507,7 +441,7 @@ interstitialReady             = false;
 window.admobInterstitialReady = false;
 interstitialRetries++;
 
-hideWatchAdButton();
+// REMOVED: hideWatchAdButton() call
 
 if (interstitialRetries < MAX_RETRY_ATTEMPTS) {
 await wait(RETRY_DELAY_MS * interstitialRetries);
@@ -525,7 +459,7 @@ if ((Date.now() - interstitialLastShown) < INTERSTITIAL_COOLDOWN_MS)  return;
 try {
 interstitialShowing = true;
 
-hideWatchAdButton();
+// REMOVED: hideWatchAdButton() call
 if (window.admobBanner) await window.admobBanner.hide();
 
 interstitialAd.on('dismiss', async () => {
@@ -546,7 +480,7 @@ interstitialAd                = null;
 window.admobInterstitialReady = false;
 
 if (window.admobBanner) await window.admobBanner.show();
-hideWatchAdButton();
+// REMOVED: hideWatchAdButton() call
 await loadInterstitialAd(window.admobNpa);
 });
 
@@ -558,23 +492,17 @@ if (window.admobBanner) await window.admobBanner.show();
 }
 }
 
-// ========== BALANCED AD TRIGGERS (Your Approved Plan) ==========
-// No changes to consent code - everything below just calls existing functions
+// ========== BALANCED AD TRIGGERS (No button, consent untouched) ==========
 
 let adTriggersInitialized = false;
 let hasShownFirstInterstitial = false;
-let lastAdTriggerTime = 0;
 let lastPageType = '';
 
-// Track when we manually show ads to respect cooldowns
+const MANUAL_INTERSTITIAL_COOLDOWN = 3 * 60 * 1000;
 let manualInterstitialLastShown = 0;
-let manualAppOpenLastShown = 0;
-
-const MANUAL_INTERSTITIAL_COOLDOWN = 3 * 60 * 1000; // 3 minutes
-const MANUAL_APP_OPEN_COOLDOWN = 2 * 60 * 1000;     // 2 minutes
 
 function canShowManualInterstitial() {
-    // Check consent using your existing function
+    // Check consent using your existing function (UNCHANGED)
     if (typeof shouldShowWatchAdButton === 'function' && !shouldShowWatchAdButton()) {
         console.log('[Ad] Consent prevents interstitial');
         return false;
@@ -589,16 +517,6 @@ function canShowManualInterstitial() {
     return true;
 }
 
-function canShowManualAppOpen() {
-    const now = Date.now();
-    if (now - manualAppOpenLastShown < MANUAL_APP_OPEN_COOLDOWN) {
-        console.log('[Ad] Manual app open cooldown active');
-        return false;
-    }
-    return true;
-}
-
-// 1. Interstitial: First time user navigates to ANY category
 function onFirstCategoryNavigation() {
     if (!hasShownFirstInterstitial && canShowManualInterstitial()) {
         hasShownFirstInterstitial = true;
@@ -612,7 +530,6 @@ function onFirstCategoryNavigation() {
     }
 }
 
-// 2. Interstitial: After cooldown, on next category navigation
 function onSubsequentCategoryNavigation() {
     if (hasShownFirstInterstitial && canShowManualInterstitial()) {
         manualInterstitialLastShown = Date.now();
@@ -625,20 +542,6 @@ function onSubsequentCategoryNavigation() {
     }
 }
 
-// 3. App Open: When user navigates back to home
-function onBackToHomeTrigger() {
-    if (canShowManualAppOpen()) {
-        manualAppOpenLastShown = Date.now();
-        console.log('[Ad] App open - back to home');
-        setTimeout(() => {
-            if (typeof showAppOpenAd === 'function') {
-                showAppOpenAd();
-            }
-        }, 300);
-    }
-}
-
-// DOM Observer to detect page changes (no mindex.js modification needed)
 function setupPageWatcher() {
     const viewport = document.getElementById('page-viewport');
     if (!viewport) {
@@ -650,7 +553,6 @@ function setupPageWatcher() {
         const activePage = document.querySelector('.page-layer.page--active');
         if (!activePage) return;
         
-        // Detect if current page is home or category
         const isHome = activePage.querySelector('.home-section') !== null;
         const isCategory = !isHome && (activePage.querySelector('.btn-grid-item') !== null || activePage.querySelector('.quote-box') !== null);
         
@@ -660,15 +562,11 @@ function setupPageWatcher() {
             console.log('[Ad] Page change detected:', lastPageType, '->', currentPageType);
             
             if (currentPageType === 'category') {
-                // User navigated TO a category
                 if (!hasShownFirstInterstitial) {
                     onFirstCategoryNavigation();
                 } else {
                     onSubsequentCategoryNavigation();
                 }
-            } else if (currentPageType === 'home' && lastPageType === 'category') {
-                // User navigated BACK to home
-                onBackToHomeTrigger();
             }
             
             lastPageType = currentPageType;
@@ -682,26 +580,18 @@ function setupPageWatcher() {
         attributeFilter: ['class']
     });
     
-    // Initial check
     setTimeout(() => {
         const activePage = document.querySelector('.page-layer.page--active');
         if (activePage) {
             const isHome = activePage.querySelector('.home-section') !== null;
             lastPageType = isHome ? 'home' : 'category';
-            console.log('[Ad] Initial page type:', lastPageType);
         }
     }, 1000);
-    
-    console.log('[Ad] Page watcher initialized');
 }
 
 document.addEventListener('deviceready', async () => {
-
-createWatchAdButton();
 createPrivacyButton();
 hidePrivacyButton();
-hideWatchAdButton();
-
 if (!window.admobConsentDone) {
 
 await admob.start();
@@ -724,17 +614,13 @@ await loadAppOpenAd(window.admobNpa);
 
 if (!window.admobInterstitialReady) {
 await loadInterstitialAd(window.admobNpa);
-} else {
-showWatchAdButton();
 }
 
-// ========== INITIALIZE BALANCED AD TRIGGERS ==========
-// This starts the page watcher that detects navigation
+
 if (!adTriggersInitialized) {
     adTriggersInitialized = true;
     setTimeout(() => {
         setupPageWatcher();
-        console.log('[Ad] Balanced ad triggers ready - respecting consent & cooldowns');
     }, 2000);
 }
 
