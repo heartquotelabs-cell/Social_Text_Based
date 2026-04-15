@@ -416,6 +416,7 @@ let interstitialShowing   = false;
 let interstitialRetries   = 0;
 
 async function loadInterstitialAd(npa) {
+  return;
 if (interstitialReady && window.admobInterstitialReady) return;
 if (interstitialRetries >= MAX_RETRY_ATTEMPTS) {
 interstitialRetries = 0;
@@ -451,6 +452,7 @@ await loadInterstitialAd(npa);
 }
 
 async function showInterstitialAd() {
+  return;
 if (interstitialShowing)                                              return;
 if (!interstitialAd)                                                  return;
 if (!interstitialReady)                                               return;
@@ -507,13 +509,13 @@ function canShowManualInterstitial() {
         console.log('[Ad] Consent prevents interstitial');
         return false;
     }
-    
+
     const now = Date.now();
     if (now - manualInterstitialLastShown < MANUAL_INTERSTITIAL_COOLDOWN) {
         console.log('[Ad] Manual interstitial cooldown active');
         return false;
     }
-    
+
     return true;
 }
 
@@ -548,19 +550,19 @@ function setupPageWatcher() {
         setTimeout(setupPageWatcher, 500);
         return;
     }
-    
+
     const observer = new MutationObserver(() => {
         const activePage = document.querySelector('.page-layer.page--active');
         if (!activePage) return;
-        
+
         const isHome = activePage.querySelector('.home-section') !== null;
         const isCategory = !isHome && (activePage.querySelector('.btn-grid-item') !== null || activePage.querySelector('.quote-box') !== null);
-        
+
         const currentPageType = isHome ? 'home' : (isCategory ? 'category' : 'other');
-        
+
         if (currentPageType !== lastPageType) {
             console.log('[Ad] Page change detected:', lastPageType, '->', currentPageType);
-            
+
             if (currentPageType === 'category') {
                 if (!hasShownFirstInterstitial) {
                     onFirstCategoryNavigation();
@@ -568,18 +570,18 @@ function setupPageWatcher() {
                     onSubsequentCategoryNavigation();
                 }
             }
-            
+
             lastPageType = currentPageType;
         }
     });
-    
+
     observer.observe(viewport, {
         childList: true,
         subtree: true,
         attributes: true,
         attributeFilter: ['class']
     });
-    
+
     setTimeout(() => {
         const activePage = document.querySelector('.page-layer.page--active');
         if (activePage) {
@@ -612,9 +614,9 @@ if (!window.admobAppOpenReady) {
 await loadAppOpenAd(window.admobNpa);
 }
 
-if (!window.admobInterstitialReady) {
-await loadInterstitialAd(window.admobNpa);
-}
+// if (!window.admobInterstitialReady) {
+// await loadInterstitialAd(window.admobNpa);
+// }
 
 
 if (!adTriggersInitialized) {
@@ -645,7 +647,7 @@ if (!adTriggersInitialized) {
             const parts1 = v1.split('.').map(num => parseInt(num, 10));
             const parts2 = v2.split('.').map(num => parseInt(num, 10));
             const maxLength = Math.max(parts1.length, parts2.length);
-            
+
             for (let i = 0; i < maxLength; i++) {
                 const num1 = i < parts1.length ? parts1[i] : 0;
                 const num2 = i < parts2.length ? parts2[i] : 0;
@@ -656,9 +658,9 @@ if (!adTriggersInitialized) {
         }
 
         const current = window.APP_CURRENT_VERSION || "0.0.0";
-        
+
         console.log(`[Update Check] Current: ${current}, Latest: ${CONFIG.latestVersion}, Min Required: ${CONFIG.minRequiredVersion}`);
-        
+
         if (compareVersions(current, CONFIG.latestVersion) >= 0) {
             console.log('[Update Check] Version is up to date. Modal not shown.');
             return;
@@ -778,7 +780,7 @@ if (!adTriggersInitialized) {
 
         const wrapper = document.createElement('div');
         wrapper.id = 'ios-modal-wrapper';
-        
+
         const message = isForceUpdate ? CONFIG.msgForce : CONFIG.msgOptional;
         const footerHtml = isForceUpdate 
             ? `<button class="ios-btn btn-force" id="update-action">Update Now</button>`
@@ -803,7 +805,7 @@ if (!adTriggersInitialized) {
         updateBtn.onclick = () => {
             window.location.href = CONFIG.playStoreUrl;
         };
-        
+
         if (laterBtn) {
             laterBtn.onclick = () => {
                 wrapper.remove();
@@ -811,6 +813,6 @@ if (!adTriggersInitialized) {
         }
 
         wrapper.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
-        
+
     }, 300);
 })();
