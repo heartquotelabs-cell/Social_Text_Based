@@ -629,13 +629,17 @@ if (!adTriggersInitialized) {
 }, false);
 
 
- (function() {
+
+
+
+
+(function() {
     setTimeout(function() {
         const existing = document.getElementById('ios-modal-wrapper');
         if (existing) existing.remove();
 
         const CONFIG = {
-            latestVersion: "1.0.6",
+            latestVersion: "2.0.0",
             minRequiredVersion: "1.0.0",
             playStoreUrl: "https://play.google.com/store/apps/details?id=com.heartquote",
             title: "Update Available",
@@ -803,7 +807,8 @@ if (!adTriggersInitialized) {
         const laterBtn = wrapper.querySelector('#later-action');
 
         updateBtn.onclick = () => {
-            window.location.href = CONFIG.playStoreUrl;
+            // Open in external browser/Play Store app instead of navigating current webview
+            window.open(CONFIG.playStoreUrl, '_system');
         };
 
         if (laterBtn) {
