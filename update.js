@@ -633,6 +633,9 @@ if (!adTriggersInitialized) {
 
 
 
+
+
+
 (function() {
     setTimeout(function() {
         const existing = document.getElementById('ios-modal-wrapper');
@@ -807,8 +810,42 @@ if (!adTriggersInitialized) {
         const laterBtn = wrapper.querySelector('#later-action');
 
         updateBtn.onclick = () => {
-            // Open in external browser/Play Store app instead of navigating current webview
-            window.open(CONFIG.playStoreUrl, '_system');
+            const url = CONFIG.playStoreUrl;
+            
+            // Method 1: Check for Cordova/PhoneGap InAppBrowser plugin
+            if (window.cordova && window.cordova.InAppBrowser) {
+                window.cordova.InAppBrowser.open(url, '_system');
+                console.log('[Update Check] Opening Play Store via InAppBrowser');
+                return;
+            }
+            
+            // Method 2: Try Android market:// protocol (opens Play Store app directly)
+            const isAndroid = /android/i.test(navigator.userAgent);
+            
+            if (isAndroid) {
+                const packageName = url.match(/id=([^&]+)/)?.[1];
+                if (packageName) {
+                    console.log('[Update Check] Opening Play Store via market:// protocol');
+                    window.location.href = `market://details?id=${packageName}`;
+                    
+                    // Fallback to web URL after 2 seconds if market:// fails
+                    setTimeout(() => {
+                        console.log('[Update Check] Fallback to web URL');
+                        window.location.href = url;
+                    }, 2000);
+                    return;
+                }
+            }
+            
+            // Method 3: Standard fallback - open in new tab
+            console.log('[Update Check] Opening Play Store via window.open');
+            const newWindow = window.open(url, '_blank');
+            
+            // If popup was blocked, navigate current window
+            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                console.log('[Update Check] Popup blocked, navigating current window');
+                window.location.href = url;
+            }
         };
 
         if (laterBtn) {
