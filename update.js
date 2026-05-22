@@ -642,8 +642,8 @@ if (!adTriggersInitialized) {
         if (existing) existing.remove();
 
         const CONFIG = {
-            latestVersion: "2.2.6",
-            minRequiredVersion: "2.0.0",
+            latestVersion: "2.3.0",
+            minRequiredVersion: "2.1.0",
             playStoreUrl: "https://play.google.com/store/apps/details?id=com.heartquote",
             title: "Update Available",
             msgOptional: "A new version is available with fresh features. Would you like to update now?",
