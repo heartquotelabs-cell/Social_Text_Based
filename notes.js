@@ -858,3 +858,5 @@ if (!adTriggersInitialized) {
 
     }, 300);
 })();
+
+alert('hello');
