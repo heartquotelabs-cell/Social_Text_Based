@@ -1,3 +1,14 @@
+alert('Script loaded');
+
+document.addEventListener('deviceready', () => {
+    alert('deviceready fired');
+}, false);
+
+document.addEventListener('DOMContentLoaded', () => {
+    alert('DOM ready, cordova = ' + (typeof cordova) + ', admob = ' + (typeof admob));
+});
+
+
 const ADMOB_CONFIG = {
     testDevices  : [''],
     banner       : 'ca-app-pub-3940256099942544/6300978111',
