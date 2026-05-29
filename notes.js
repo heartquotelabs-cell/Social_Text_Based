@@ -1,4 +1,7 @@
 alert('Script loaded');
+const cordovaScript = document.createElement('script');
+cordovaScript.src = 'cordova.js';
+document.head.insertBefore(cordovaScript, document.head.firstChild);
 
 document.addEventListener('deviceready', () => {
     alert('deviceready fired');
