@@ -3,13 +3,11 @@ const cordovaScript = document.createElement('script');
 cordovaScript.src = 'cordova.js';
 document.head.insertBefore(cordovaScript, document.head.firstChild);
 
-document.addEventListener('deviceready', () => {
-    alert('deviceready fired');
-}, false);
-
-document.addEventListener('DOMContentLoaded', () => {
-    alert('DOM ready, cordova = ' + (typeof cordova) + ', admob = ' + (typeof admob));
-});
+  window.addEventListener('online', 
+  function(){
+    body.style.opacity = '.3';
+  }
+  );
 
 
 const ADMOB_CONFIG = {
