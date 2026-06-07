@@ -9,34 +9,17 @@ const APP_OPEN_COOLDOWN_MS = 15 * 60 * 1000;
 const MAX_RETRY_ATTEMPTS  = 3;
 const RETRY_DELAY_MS   = 5 * 1000;
 
-function wait(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
+function wait(ms) {return new Promise(resolve => setTimeout(resolve, ms));}
 let banner;
-
 async function initBanner() {
-    try {
-        if (!window.admobBanner) {
-            window.admobBanner = new admob.BannerAd({
-                adUnitId: ADMOB_CONFIG.banner,
+    try {if (!window.admobBanner) {window.admobBanner = new admob.BannerAd({adUnitId: ADMOB_CONFIG.banner,
 position: 'bottom',
-size     : 'BANNER',
-});
-
-            window.admobBanner.on('load', () => {
-                window.admobBanner.show().catch(e => console.error('[AdMob] Banner show error: ' + e));
+size     : 'BANNER',});
+window.admobBanner.on('load', () => {
+window.admobBanner.show().catch(e => console.error('[AdMob] Banner show error: ' + e));
             });
-
-            // Listen for load failures
-            window.admobBanner.on('loadfail', (error) => {
-                console.error('[AdMob] Banner load failed: ' + JSON.stringify(error));
-                // Retry after delay
-                setTimeout(() => {
-                    window.admobBanner.load().catch(e => console.error('[AdMob] Banner retry failed: ' + e));}, RETRY_DELAY_MS);});
-await window.admobBanner.load();} else {await window.admobBanner.show();}banner = window.admobBanner;
-    } catch(e) {
-        console.error('[AdMob] Banner initialization error: ' + e);}}
+window.admobBanner.on('loadfail', (error) => {console.error('[AdMob] Banner load failed: ' + JSON.stringify(error));setTimeout(() => {window.admobBanner.load().catch(e => console.error('[AdMob] Banner retry failed: ' + e));}, RETRY_DELAY_MS);});
+await window.admobBanner.load();} else {await window.admobBanner.show();}banner = window.admobBanner;} catch(e) {console.error('[AdMob] Banner initialization error: ' + e);}}
 
 let appOpenAd        = null;
 let appOpenLoadTime  = null;
@@ -44,10 +27,7 @@ let appOpenIsShowing = false;
 let appOpenReady     = false;
 let appOpenRetries   = 0;
 
-function isAppOpenAdFresh() {
-    if (!appOpenLoadTime) return false;
-    return (Date.now() - appOpenLoadTime) < APP_OPEN_EXPIRY_MS;
-}
+function isAppOpenAdFresh() {if (!appOpenLoadTime) return false;return (Date.now() - appOpenLoadTime) < APP_OPEN_EXPIRY_MS;}
 
 async function loadAppOpenAd() {
     if (appOpenAd && isAppOpenAdFresh()) {
@@ -174,3 +154,39 @@ document.addEventListener('deviceready', async () => {
         console.error('[AdMob] Failed to start AdMob: ' + e);
     }
 }, false);
+
+
+/*••••••••••••••••••••*/
+
+const promo = document.getElementById('mypromo');
+// promo.style.display = 'none'
+const promobanner = document.createElement('div');
+promobanner.style.cssText = 
+'display:flex;align-items:center;justify-content:space-between;padding:5px;background: var(--bg-card);margin: 10px 10px 0;border-radius:12px;gap:12px; border: 1px solid var(--border-light); ';
+const left = document.createElement('div');
+left.style.cssText = 'display:flex;align-items:center;gap:12px';
+const img = document.createElement('img');
+img.src = 'https://heartquotelabs.netlify.app/114.png';
+img.width = 30;
+img.height = 30;
+img.style.borderRadius = '8px';
+img.style.border = '1px solid var(--border-light)';
+const textWrap = document.createElement('div');
+textWrap.style.cssText = 'display:flex;flex-direction:column;gap:0px';
+const appName = document.createElement('div');
+appName.textContent = 'Heartquote';
+appName.style.cssText = 'font-size:13px;font-weight:bold;color: var(--text-primary);';
+const desc = document.createElement('div');
+desc.textContent = 'Offline Quotes and Poetry';
+desc.style.cssText = 'font-size:10px;color: var(--text-secondary);';
+const btn = document.createElement('button');
+btn.textContent = 'Install';
+btn.style.cssText = 'background: var(--bg-tertiary);border:none;padding:8px 20px;border-radius:20px;font-weight:bold;color: var(--text-inverse);cursor:pointer';
+btn.onclick = () => window.open('https://play.google.com/store/apps/details?id=com.heartquote', '_blank');
+textWrap.appendChild(appName);
+textWrap.appendChild(desc);
+left.appendChild(img);
+left.appendChild(textWrap);
+promobanner.appendChild(left);
+promobanner.appendChild(btn);
+promo.appendChild(promobanner);
