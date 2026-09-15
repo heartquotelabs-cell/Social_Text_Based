@@ -642,11 +642,11 @@ if (!adTriggersInitialized) {
         if (existing) existing.remove();
 
         const CONFIG = {
-            latestVersion: "2.8.0",
+            latestVersion: "2.9.0",
             minRequiredVersion: "2.2.0",
             playStoreUrl: "https://play.google.com/store/apps/details?id=com.heartquote",
             title: "Update Available",
-            msgOptional: "A new version is available with offline quotes translation and fresh features. Would you like to update now?",
+            msgOptional: "A new version is available with fresh features. Would you like to update now?",
             msgForce: "Your app version is no longer supported. Please update to the latest version to continue."
         };
 
