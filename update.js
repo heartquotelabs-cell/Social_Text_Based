@@ -1,3 +1,48 @@
+
+/* ═══ SHARE DIAGNOSTIC (TEMPORARY) ═══ */
+setTimeout(function() {
+  // 1. Check Plugin Status
+  var isCordova = typeof cordova !== 'undefined';
+  var hasPlugin = isCordova && window.plugins && window.plugins.socialsharing;
+  
+  if (!isCordova) {
+    alert("DIAGNOSTIC: Not running in Cordova (Browser only).");
+    return;
+  }
+  
+  if (!hasPlugin) {
+    alert("DIAGNOSTIC: Cordova is running, but SocialSharing plugin is MISSING.");
+    return;
+  }
+
+  // 2. If plugin exists, hijack the share function to add logging
+  var originalShare = window.plugins.socialsharing.share;
+  
+  window.plugins.socialsharing.share = function(message, subject, image, url) {
+    alert("STEP 1: share() called by app.\nMessage length: " + (message ? message.length : 0) + "\nImage length: " + (image ? image.length : "None"));
+    
+    try {
+      // Call the original plugin function WITH callbacks to catch the actual OS result
+      originalShare.call(this, message, subject, image, url, 
+        function(success) {
+          alert("STEP 2: SUCCESS CALLBACK!\nResult: " + JSON.stringify(success));
+        },
+        function(error) {
+          alert("STEP 2: ERROR CALLBACK!\nError: " + JSON.stringify(error));
+        }
+      );
+      
+      alert("STEP 3: share() finished executing. Waiting for Android...");
+    } catch (e) {
+      alert("STEP 3: CRASH! Error: " + e.message);
+    }
+  };
+  
+  alert("DIAGNOSTIC: Share hook installed successfully. Ready to test.");
+}, 2000);
+
+
+
 const firebaseConfig = {
 apiKey: "AIzaSyCZCAwncuoDuy033ZrEquCwRvYpacBs8xM",
 authDomain: "heartquotecommunity.firebaseapp.com",
